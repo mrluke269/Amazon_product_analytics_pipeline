@@ -4,7 +4,7 @@ An end-to-end data pipeline that extracts Amazon product data via API, loads it 
 
 ## Project Overview
 
-This project demonstrates a complete analytics engineering workflow for analyzing Amazon dog food products. The pipeline identifies market opportunities by analyzing product ratings, sales volume, pricing, and customer reviews to surface products with strong potential but lower competition.
+This project demonstrates a complete analytics engineering workflow for analyzing Amazon products. The pipeline identifies market opportunities by analyzing product ratings, sales volume, pricing, and customer reviews to surface products with strong potential but lower competition.
 
 **Key Insight**: The analysis categorizes products into three segments (Opportunity, Highly Supplied, Unproven) and calculates a Quality Score to identify affordable, well-rated products with validation but not market saturation.
 
