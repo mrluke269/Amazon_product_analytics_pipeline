@@ -1,6 +1,6 @@
 # 🛒 Amazon Product Analysis Pipeline
 
-> An end-to-end analytics engineering project that identifies market opportunities in Amazon's dog food category through automated data extraction, transformation, and visualization.
+> An end-to-end analytics engineering project that identifies market opportunities in Amazon's marketplace through automated data extraction, loading, transformation, and visualization.
 
 [![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
 [![dbt](https://img.shields.io/badge/dbt-Core-orange.svg)](https://www.getdbt.com/)
@@ -210,56 +210,14 @@ python scripts/load_to_snowflake.py
 -  Cleans up temporary files
 
 **Load process:**
-```
-┌─────────────────┐
-│ Extract ASINs   │
-│ from JSON       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Query Snowflake │
-│ for existing    │
-│ ASINs           │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Filter new      │
-│ ASINs only      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Create temp     │
-│ JSON file       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ PUT file to     │
-│ Snowflake stage │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ COPY INTO table │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ REMOVE from     │
-│ stage           │
-└─────────────────┘
-```
+
+<img width="517" height="1569" alt="image" src="https://github.com/user-attachments/assets/e758ad69-bdc7-4a48-8c53-505d42a554aa" />
+
 
 ---
 
-### 📍 Step 4: Transform with dbt
+### Step 4: Transform with dbt
 
-```bash
-dbt run
-```
 
 **Transformation layers executed:**
 
@@ -285,106 +243,23 @@ Layer 3: MARTS
 
 ---
 
-### 📍 Step 5: Visualize in Power BI
+###  Step 5: Visualize in Power BI
 
-1. 🔌 Connect Power BI to Snowflake
-2. 📥 Import `MART_AMAZON__PRODUCT_ANALYSIS` table
-3. 📊 Use provided DAX formulas for analytics
-
----
-
-## 🔄 dbt Transformation Details
-
-### 🏗️ Layered Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    RAW LAYER (Snowflake)                │
-│                   product_details table                  │
-│                    (JSON variant data)                   │
-└────────────────────────┬────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                   STAGING LAYER (dbt)                    │
-│              stg_amazon__product_details                 │
-│   • Extract JSON fields                                  │
-│   • Cast to appropriate types                            │
-│   • Basic cleaning                                       │
-└─────────┬────────────────────────────────┬──────────────┘
-          │                                │
-          ▼                                ▼
-┌───────────────────────┐     ┌───────────────────────────┐
-│  INTERMEDIATE LAYER   │     │   INTERMEDIATE LAYER      │
-│  int_amazon__         │     │   int_amazon__            │
-│  products_cleaned     │     │   product_ratings         │
-│                       │     │                           │
-│  • Parse prices       │     │  • Flatten rating JSON    │
-│  • Remove $ symbols   │     │  • Create % columns       │
-└───────┬───────────────┘     └──────────┬────────────────┘
-        │                                │
-        │        ┌───────────────────────┴────────────┐
-        │        │   INTERMEDIATE LAYER              │
-        │        │   int_amazon__                     │
-        │        │   sale_volume_cleaned              │
-        │        │                                    │
-        │        │   • Parse "10K" strings            │
-        │        │   • Convert to numeric             │
-        │        └────────────┬───────────────────────┘
-        │                     │
-        ▼                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                    MARTS LAYER (dbt)                     │
-│              mart_amazon__product_analysis               │
-│                                                          │
-│   • Join all intermediate models                         │
-│   • Calculate derived metrics:                           │
-│     - Positive percentage (5★ + 4★)                      │
-│     - Discount percentage                                │
-│   • Final analytical table                               │
-└─────────────────────────────────────────────────────────┘
-```
+1.  Connect Power BI to Snowflake
+2.  Import `MART_AMAZON__PRODUCT_ANALYSIS` table
+3.  Use DAX formulas for analytics
 
 ---
 
-## 📊 Power BI Analytics Logic
 
-### 🏷️ Product Classification System
-
-Products are automatically categorized into three market segments:
-
-```
-                    ┌─────────────────────────────────┐
-                    │   Product Classification        │
-                    │   Decision Tree                 │
-                    └────────────┬────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │  Rating >= 4.0 stars?   │
-                    └──┬──────────────────┬───┘
-                  NO   │                  │  YES
-                       │                  │
-            ┌──────────▼──────┐   ┌──────▼────────────────────────┐
-            │                 │   │  Reviews: Q1 to Median?       │
-            │   UNPROVEN      │   │  Sales: Q1 to Median?         │
-            │                 │   └──┬────────────────────────┬───┘
-            └─────────────────┘  YES │                        │ NO
-                                     │                        │
-                         ┌───────────▼──────────┐   ┌─────────▼─────────┐
-                         │                      │   │                   │
-                         │    OPPORTUNITY       │   │  HIGHLY SUPPLIED  │
-                         │   (Growth Potential) │   │   (Saturated)     │
-                         │                      │   │                   │
-                         └──────────────────────┘   └───────────────────┘
-```
 
 #### Segment Definitions
 
-| Segment | Criteria | Interpretation | Example Products |
-|---------|----------|----------------|------------------|
-| 🟢 **Opportunity** | • Reviews: Q1 to Median<br>• Sales: Q1 to Median<br>• Rating ≥ 4.0 | **Sweet spot!** Validated by customers but not oversaturated | 10 products (20%) |
-| 🟡 **Highly Supplied** | • Reviews > Median OR<br>• Sales > Median | High competition, harder to differentiate | 28 products (56%) |
-| 🔴 **Unproven** | • Everything else | Low validation or demand | 12 products (24%) |
+| Segment | Criteria | Interpretation |
+|---------|----------|----------------|
+| 🟢 **Opportunity** | • Reviews: Q1 to Median<br>• Sales: Q1 to Median<br>• Rating ≥ 4.0 | **Sweet spot!** Validated by customers but not oversaturated |
+| 🟡 **Highly Supplied** | • Reviews > Median OR<br>• Sales > Median | High competition, harder to differentiate |
+| 🔴 **Unproven** | • Everything else | Low validation or demand |
 
 #### DAX Formula for Classification
 
@@ -422,17 +297,17 @@ Quality Score = Star Rating / ((Reviews / 1000) × Price)
 ```
 
 **What it rewards:**
-- ⭐ **High ratings** → Better quality
-- 💰 **Lower prices** → More affordable  
-- ✅ **Moderate reviews** → Validated but not oversaturated
+-  **High ratings** → Better quality
+-  **Lower prices** → More affordable  
+-  **Moderate reviews** → Validated but not oversaturated
 
 **Example calculation:**
 
 | Product | Rating | Reviews | Price | Quality Score | Interpretation |
 |---------|--------|---------|-------|---------------|----------------|
-| Product A | 4.5 | 5,788 | $6.99 | **0.11** | ⭐ Best value! |
-| Product B | 4.6 | 9,976 | $9.98 | **0.05** | ✅ Good value |
-| Product C | 4.7 | 30,000 | $20.00 | **0.01** | ❌ Overpriced/saturated |
+| Product A | 4.5 | 5,788 | $6.99 | **0.11** | 🟢 Highest chance to make profit- start with these products |
+| Product B | 4.6 | 9,976 | $9.98 | **0.05** | 🟡 Start with these after |
+| Product C | 4.7 | 30,000 | $20.00 | **0.01** | 🔴 Lowest chance, research last |
 
 #### DAX Formula for Quality Score
 
@@ -447,97 +322,32 @@ MART_AMAZON__PRODUCT_ANALYSIS[PRODUCT_STAR_RATING] /
 
 ---
 
-### 📈 Dashboard Insights
+###  Dashboard Insights
 
-#### Products Overview Dashboard
+#### Market Overview
 
-**Key Metrics:**
-- Total Products Analyzed: **50**
-- Median Sales Volume: **10,000** units/month
-- Median Reviews: **10,115**
-- Median Price: **$10.00**
+![Project Overview](dashboard/overview.png)
 
-**Distribution:**
-```
-Product Label Distribution
-─────────────────────────
-🟡 Highly Supplied   28 (56%) ████████████████
-🟢 Opportunity       10 (20%) ██████
-🔴 Unproven         12 (24%) ████████
-```
+#### Recommendations
+![Recommendations](dashboard/details.png)
 
-#### Product Research Recommendation Dashboard
 
-**Top 10 Opportunity Products** (sorted by Quality Score):
 
-| Rank | ASIN | Price | Reviews | Rating | Sales | Quality Score |
-|------|------|-------|---------|--------|-------|---------------|
-| 1 | B09TFNQM7Z | $6.99 | 5,788 | 4.50 | 10,000 | 0.11 |
-| 2 | B0C9QK9BZF | $9.98 | 4,383 | 4.60 | 10,000 | 0.11 |
-| 3 | B09Y85LJFR | $7.99 | 6,198 | 4.40 | 6,000 | 0.09 |
-| 4 | B0B1LVKG8D | $9.99 | 7,188 | 4.20 | 10,000 | 0.06 |
-| 5 | B0DG1X5KHM | $14.99 | 4,980 | 4.20 | 10,000 | 0.06 |
+### Strategic Opportunities
 
-**Action:** Focus on products with Quality Score > 0.05 in the Opportunity segment
+**10 Opportunity Products Identified:**
+
+- ✅ Proven demand (sales: 6,000-10,000/month)
+- ✅ Strong ratings (4.0-4.7 stars)
+- ✅ Customer validation (3,600-10,000 reviews)
+- ✅ Not oversaturated
+- ✅ Affordable ($6.99-$87.99 range)
+
+**Recommended Action:** Focus on products with highest Quality Score
 
 ---
 
-## 🔑 Key Features
-
-### ✨ Incremental Processing
-
-```
-Benefits of Incremental Models:
-┌────────────────────────────────────────┐
-│ ✅ Only process new/updated records    │
-│ ✅ Reduced compute costs               │
-│ ✅ Faster transformation runs          │
-│ ✅ Deduplication by ASIN               │
-│ ✅ Preserves historical data           │
-└────────────────────────────────────────┘
-```
-
-All dbt models use `materialized='incremental'` with `unique_key='asin'`
-
-### 🛡️ Error Handling
-
-```python
-# Robust error handling in all scripts
-try:
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    # Process data
-except Exception as e:
-    print(f"❌ Failed: {e}")
-    # Continue processing other items
-```
-
-### ✅ Data Quality
-
-| Layer | Quality Check | Implementation |
-|-------|---------------|----------------|
-| **Load** | Deduplication | Check existing ASINs before load |
-| **Staging** | Type casting | Convert JSON strings to proper types |
-| **Intermediate** | Null handling | Use `NULLIF()` in calculations |
-| **Marts** | Validation | Test for completeness and accuracy |
-
-### 📈 Scalability Considerations
-
-```
-Current Scale:  50 products
-Can handle:     10,000+ products with same architecture
-
-Scaling strategies:
-├── Batch processing via temp files
-├── Parameterized queries in dbt
-├── Incremental models for efficiency
-├── Modular script architecture
-└── Cloud warehouse auto-scaling
-```
-
----
-
-## 🤔 Design Decisions & Rationale
+##  Design Decisions & Rationale
 
 ### Why Incremental Models?
 
@@ -614,115 +424,12 @@ API → Load everything                   API → Check existing ASINs
 
 ---
 
-### Why JSON as Intermediate Format?
 
-```
-Benefits of JSON Storage:
-┌─────────────────────────────────────────────────┐
-│ 1️⃣  API responses are naturally JSON           │
-│ 2️⃣  Schema can evolve without code changes     │
-│ 3️⃣  Can reprocess without re-calling APIs      │
-│ 4️⃣  Preserves all data (even unused fields)    │
-│ 5️⃣  Snowflake VARIANT type handles it natively │
-└─────────────────────────────────────────────────┘
-
-Example:
-API adds new field → Automatically stored → Extract when needed
-```
-
----
-
-## 📊 Sample Insights from Dashboard
-
-### Market Landscape Analysis
-
-**50 Products Analyzed:**
-
-```
-Distribution by Segment:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🟡 Highly Supplied (28)  ████████████████████████████ 56%
-🟢 Opportunity (10)      ██████████ 20%
-🔴 Unproven (12)         ████████████ 24%
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-### Market Benchmarks
-
-| Metric | Value | Insight |
-|--------|-------|---------|
-| 📊 Median Sales Volume | 10,000 units/month | Market baseline |
-| ⭐ Median Reviews | 10,115 | High validation threshold |
-| 💰 Median Price | $10.00 | Competitive price point |
-| 🎯 Top Quality Score | 0.11 | Best value products |
-
-### Strategic Opportunities
-
-**10 Opportunity Products Identified:**
-
-- ✅ Proven demand (sales: 6,000-10,000/month)
-- ✅ Strong ratings (4.0-4.7 stars)
-- ✅ Customer validation (3,600-10,000 reviews)
-- ✅ Not oversaturated
-- ✅ Affordable ($6.99-$87.99 range)
-
-**Recommended Action:** Focus on products with Quality Score > 0.05
-
----
-
-## 🚀 Future Enhancements
-
-### Phase 1: Data Quality (Next 1-2 months)
-```
-┌─────────────────────────────────────┐
-│ 🧪 Implement dbt Tests              │
-│    ├── Not null checks               │
-│    ├── Unique constraints            │
-│    ├── Relationship tests            │
-│    └── Custom business rules         │
-└─────────────────────────────────────┘
-```
-
-### Phase 2: Orchestration (Months 2-3)
-```
-┌─────────────────────────────────────┐
-│ 🔄 Apache Airflow / Fabric Pipeline │
-│    ├── Scheduled daily runs          │
-│    ├── Dependency management         │
-│    ├── Failure alerts                │
-│    └── Retry logic                   │
-└─────────────────────────────────────┘
-```
-
-### Phase 3: Expansion (Months 3-6)
-```
-┌─────────────────────────────────────┐
-│ 📈 Scale the Pipeline                │
-│    ├── Multiple categories           │
-│    ├── Historical trend tracking     │
-│    ├── Competitor analysis           │
-│    └── Price change monitoring       │
-└─────────────────────────────────────┘
-```
-
-### Phase 4: Advanced (Months 6+)
-```
-┌─────────────────────────────────────┐
-│ 🎯 Advanced Features                 │
-│    ├── CI/CD for dbt deployments     │
-│    ├── Automated alerting            │
-│    ├── ML-based recommendations      │
-│    └── Real-time dashboard updates   │
-└─────────────────────────────────────┘
-```
-
----
-
-## 💼 Technical Skills Demonstrated
+## 💼 Technical Breakdown
 
 This project showcases core analytics engineering competencies aligned with the modern data stack:
 
-### 🐍 Python for Data Engineering
+###  Python for Data Engineering
 
 | Skill | Implementation | File |
 |-------|----------------|------|
@@ -733,50 +440,29 @@ This project showcases core analytics engineering competencies aligned with the 
 | **Data Structures** | Lists, dictionaries, JSON manipulation | All scripts |
 | **State Management** | Track loaded ASINs, avoid duplicates | `load_to_snowflake.py` |
 
-**Code Example:**
-```python
-# Robust error handling pattern used throughout
-for asin in asin_list:
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        # Process successful response
-    except Exception as e:
-        print(f"❌ Failed to fetch {asin}: {e}")
-        # Continue processing other items
-```
-
 ---
 
-### 🗄️ SQL & Data Modeling
+###  SQL & Data Modeling
 
 | Skill | Implementation | Example |
 |-------|----------------|---------|
 | **JSON Parsing** | Extract fields from VARIANT type | `details_raw:asin::varchar` |
 | **CTEs** | Structured queries with `WITH` clauses | All dbt models |
-| **Window Functions** | Ranking and analytics | Dashboard calculations |
 | **Type Casting** | Convert strings to proper types | `::DECIMAL(10,2)` |
 | **Joins** | LEFT JOIN multiple tables | `mart_amazon__product_analysis.sql` |
 | **Incremental Logic** | `{% if is_incremental() %}` | All dbt models |
 | **Aggregations** | SUM, MAX calculations | Metric calculations |
 
-**SQL Example:**
-```sql
--- Complex parsing with error handling
-REPLACE(original_price, '$', '')::DECIMAL(10,2) as original_price
-```
-
 ---
 
-### 🔧 dbt (Data Build Tool)
+###  dbt
 
 | Skill | Implementation | Impact |
 |-------|----------------|--------|
 | **Project Structure** | Staging → Intermediate → Marts | Clean architecture |
-| **Incremental Models** | `materialized='incremental'` | Cost optimization |
+| **Incremental Models** | `materialized='incremental'` |  Optimization |
 | **Sources** | `{{ source('amazon', 'table') }}` | Lineage tracking |
 | **Refs** | `{{ ref('model_name') }}` | Dependency management |
-| **Jinja Templating** | Dynamic SQL with conditions | Flexible queries |
 | **Unique Keys** | `unique_key='asin'` | Deduplication |
 | **Documentation** | YML files for metadata | Self-documenting |
 
@@ -795,7 +481,7 @@ dbt Project Structure:
 
 ---
 
-### ☁️ Cloud Data Warehouse (Snowflake)
+###  Cloud Data Warehouse (Snowflake)
 
 | Skill | Implementation | Benefit |
 |-------|----------------|---------|
@@ -815,87 +501,19 @@ dbt Project Structure:
 
 ---
 
-### 📊 Business Intelligence (Power BI)
+###  Business Intelligence (Power BI)
 
 | Skill | Implementation | Purpose |
 |-------|----------------|---------|
-| **DAX Formulas** | `SWITCH()`, calculated columns | Dynamic logic |
-| **Data Modeling** | Connect to Snowflake | Live data |
-| **Visualizations** | Scatter plots, pie charts, tables | Insights |
-| **Metrics** | KPIs, percentages, aggregations | Performance tracking |
+| **DAX Formulas** | `SWITCH()`, calculated columns |
+| **Data Modeling** | Connect to Snowflake |
+| **Visualizations** | Insights |
 | **Calculated Measures** | Quality Score formula | Custom analytics |
 
-**DAX Pattern:**
-```dax
--- Complex conditional logic
-Product_Status = 
-SWITCH(
-    TRUE(),
-    [condition1], "Result1",
-    [condition2], "Result2",
-    "Default"
-)
-```
 
 ---
 
-### 🏗️ Dimensional Modeling Concepts
-
-```
-Star Schema Pattern Applied:
-
-         ┌─────────────────┐
-         │  Fact: Products │ ← Central analytical table
-         │                 │
-         │  • ASIN (PK)    │
-         │  • Metrics      │
-         │  • Dimensions   │
-         └────────┬────────┘
-                  │
-         ┌────────┴────────┐
-         │                 │
-    ┌────▼─────┐    ┌─────▼────┐
-    │ Ratings  │    │  Pricing │  ← Dimension tables
-    │ Details  │    │  Details │
-    └──────────┘    └──────────┘
-```
-
-**Principles Applied:**
-- ✅ Separate concerns (price, ratings, sales)
-- ✅ One table per business concept
-- ✅ Joins on unique keys (ASIN)
-- ✅ Metrics calculated in final mart
-
----
-
-### 🔄 Data Pipeline Patterns
-
-```
-Batch Processing Pattern:
-┌────────────────────────────────────────┐
-│ 1. Extract (API calls)                 │
-│    └─ Batch: 10 products at a time     │
-├────────────────────────────────────────┤
-│ 2. Transform (Local processing)        │
-│    └─ Parse & validate JSON            │
-├────────────────────────────────────────┤
-│ 3. Load (Bulk insert)                  │
-│    └─ Snowflake COPY command           │
-├────────────────────────────────────────┤
-│ 4. Transform (dbt models)              │
-│    └─ Incremental processing           │
-└────────────────────────────────────────┘
-
-Benefits:
-✅ Efficient API usage
-✅ Reduced warehouse costs  
-✅ Easy error recovery
-✅ Scalable architecture
-```
-
----
-
-### 📋 Analytics Engineering Best Practices
+###  Analytics Engineering Best Practices
 
 | Practice | Implementation | Rationale |
 |----------|----------------|-----------|
@@ -910,107 +528,29 @@ Benefits:
 
 ---
 
-## 🎯 Skills Alignment with Learning Roadmap
-
-This project demonstrates mastery of the **80/20 core competencies** for analytics engineering:
-
-### ✅ SQL and Data Modeling
-- [x] Complex SQL queries with CTEs, joins, window functions
-- [x] Dimensional modeling (fact and dimension tables)
-- [x] Query optimization (incremental patterns)
-
-### ✅ dbt for Transformation Management  
-- [x] Layered project structure (staging → intermediate → marts)
-- [x] Incremental models for efficiency
-- [x] Documentation and metadata
-- [x] Modular, reusable transformations
-
-### ✅ Data Ingestion Patterns
-- [x] Multiple data formats (JSON)
-- [x] API interaction with error handling
-- [x] Batch processing patterns
-
-### ✅ Python for Data Engineering
-- [x] File I/O operations
-- [x] API interactions with `requests`
-- [x] Database connections (Snowflake)
-- [x] Error handling with try-except
-- [x] Path management with `pathlib`
-
-### ✅ Cloud Storage and Data Warehouse
-- [x] Snowflake stages and bulk loading
-- [x] VARIANT type for semi-structured data
-- [x] Efficient data organization
-
----
-
-## 📚 Repository Structure for GitHub
-
-```
-AMAZON-PRODUCT-ANALYSIS/
-├── 📄 README.md                         ← You are here!
-├── 📄 .gitignore                        ← Exclude sensitive files
-├── 📂 scripts/
-│   ├── config.py.example                ← Template for credentials
-│   ├── search_product.py
-│   ├── get_details.py
-│   └── load_to_snowflake.py
-├── 📂 dbt_project/
-│   ├── models/
-│   │   ├── staging/
-│   │   ├── intermediate/
-│   │   └── marts/
-│   ├── dbt_project.yml
-│   └── profiles.yml.example
-├── 📂 dashboards/
-│   ├── products_overview.png
-│   └── product_research.png
-└── 📂 docs/
-    └── architecture_diagram.md
-```
-
-**Important: Before pushing to GitHub:**
-1. Create `.gitignore` to exclude `config.py` and sensitive data
-2. Rename `config.py` to `config.py.example` with placeholder values
-3. Add dashboard screenshots to `/dashboards`
-4. Document setup steps in README
-
----
-
-## 📄 License
-
-This project is for **educational and portfolio purposes**.
-
----
-
 ## 📧 Contact & Links
 
-🔗 **GitHub:** [Your GitHub Profile]  
-💼 **LinkedIn:** [Your LinkedIn Profile]  
-📧 **Email:** [Your Email]
+🔗 **GitHub:** [github.com/mrluke269]  
+📧 **Email:** [luke.trmai@gmail.com]
 
 ---
 
 ## ⭐ Project Status
 
-```
-┌────────────────────────────────────────────┐
-│  Status: ✅ COMPLETE & PORTFOLIO-READY     │
-│                                            │
-│  • All pipeline stages functional          │
-│  • Documentation comprehensive             │
-│  • Dashboard deployed                      │
-│  • Code follows best practices             │
-│  • Ready for interviews & demos            │
-└────────────────────────────────────────────┘
-```
+Status: ✅ COMPLETED    
 
----
+- All pipeline stages functional
+
+- Documentation comprehensive
+  
+- Dashboard deployed
+
+
 
 <div align="center">
 
-### 🌟 Star this repo if you find it helpful!
+### 
 
-**Built with ❤️ as an Analytics Engineering Portfolio Project**
+**Luke M**
 
 </div>
