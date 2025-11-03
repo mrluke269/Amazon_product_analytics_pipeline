@@ -9,7 +9,7 @@
 
 ---
 
-## 📊 Project Overview
+##  Project Overview
 
 This portfolio project showcases a **complete analytics engineering workflow** for Amazon product analysis. The pipeline automatically:
 
@@ -18,114 +18,103 @@ This portfolio project showcases a **complete analytics engineering workflow** f
 ✅ Transforms raw data through multi-layered dbt models  
 ✅ Surfaces actionable insights via Power BI dashboards  
 
-### 🎯 Business Problem
+###  Business Objectives
 
-**How do we identify product opportunities with:**
-- Strong customer validation (good ratings)
-- Proven demand (sales volume)
-- Lower competition (not oversaturated)
+**The primary goal of this analysis is to identify a "sweet spot" in the market for a given product category. We aim to find products that are:**
+- Strong customer validation (high ratings)
+- Proven demand (have existing sales and reviews)
+- Lower competition (not in the hyper-competitive, "highly supplied" segment)
 - Affordable pricing
 
-### 💡 Solution
+The final dashboard provides a prioritized list of these "Opportunity" products to guide product research and investment decisions.
 
-A data-driven classification system that segments 50 products into:
+### Solution
 
-| Segment | Definition | Count | %  |
-|---------|-----------|-------|-----|
-| 🟢 **Opportunity** | Validated products with growth potential | 10 | 20% |
-| 🟡 **Highly Supplied** | Saturated markets with high competition | 28 | 56% |
-| 🔴 **Unproven** | Insufficient validation or demand | 12 | 24% |
+A data-driven classification system that segments products into:
 
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐      ┌─────────┐      ┌───────────┐
-│   RapidAPI  │─────▶│    Python    │─────▶│  Snowflake  │─────▶│   dbt   │─────▶│ Power BI  │
-│   Amazon    │      │   Scripts    │      │   (Raw)     │      │Transform│      │Dashboard  │
-│   Product   │      │ Extract/Load │      │   Storage   │      │ Layers  │      │  Insights │
-│     API     │      └──────────────┘      └─────────────┘      └─────────┘      └───────────┘
-└─────────────┘
-```
-
-### 🔄 Data Flow Pipeline
-
-```
-Step 1: EXTRACT                Step 2: LOAD              Step 3: TRANSFORM           Step 4: VISUALIZE
-─────────────                  ─────────                 ─────────────               ─────────────
-                                                         
-search_product.py              load_to_snowflake.py      dbt run                     Power BI
-      ↓                              ↓                       ↓                            ↓
-Search "dog food"              Check existing ASINs      Staging Layer               Products Overview
-      ↓                              ↓                       ↓                            ↓
-Get 10 ASINs                   Deduplicate new data      Intermediate Layer          Product Research
-      ↓                              ↓                       ↓                       Recommendation
-get_details.py                 Bulk load via COPY        Mart Layer                       
-      ↓                              ↓                       ↓
-Fetch product details          Cleanup temp files        Final analytics table
-      ↓
-Save to JSON
-```
+| Segment | Definition |
+|---------|-----------|
+| 🟢 **Opportunity** | Validated products with growth potential |
+| 🟡 **Highly Supplied** | Saturated markets with high competition |
+| 🔴 **Unproven** | Insufficient validation or demand |
 
 ---
 
-## 📁 Project Structure
+##  Architecture
 
-```
-📦 AMAZON/
-├── 📂 data/
-│   ├── 📄 asins_to_fetch.json          # List of product ASINs to fetch
-│   ├── 📂 product_details/
-│   │   ├── 📄 {asin}.json              # Individual product JSON files
-│   │   └── 📄 combined_products.json   # All products in one file
-│   └── 📂 temp/                        # Temporary files for Snowflake loading
+<img width="927" height="343" alt="image" src="https://github.com/user-attachments/assets/d024fa20-d579-4558-90f1-bc26c8f3fcbf" />
+
+
+###  Data Flow Pipeline
+
+<img width="1619" height="1099" alt="image" src="https://github.com/user-attachments/assets/66437620-ffdb-4626-9900-cc31540ac2c2" />
+
+
+---
+
+##  Project Structure
+
+<details>
+<summary>📁 <b>Click to expand full project structure</b></summary>
+
+<pre>
+AMAZON/
+├── data/
+│   ├── asins_to_fetch.json          # List of product ASINs to fetch
+│   ├── product_details/
+│   │   ├── {asin}.json              # Individual product JSON files
+│   │   └── combined_products.json   # All products in one file
+│   └── temp/                        # Temporary files for Snowflake loading
 │
-├── 📂 scripts/
-│   ├── 🔧 config.py                    # API keys & Snowflake credentials
-│   ├── 🔍 search_product.py            # Step 1: Search & extract ASINs
-│   ├── 📥 get_details.py               # Step 2: Fetch product details
-│   └── ⬆️  load_to_snowflake.py         # Step 3: Load to warehouse
+├── scripts/
+│   ├── config.py                    # API keys & Snowflake credentials
+│   ├── search_product.py            # Step 1: Search & extract ASINs
+│   ├── get_details.py               # Step 2: Fetch product details
+│   └── load_to_snowflake.py         # Step 3: Load to warehouse
 │
-└── 📂 dbt_project/
-    ├── 📂 models/
-    │   ├── 📂 staging/
-    │   │   └── stg_amazon__product_details.sql
-    │   ├── 📂 intermediate/
-    │   │   ├── int_amazon__products_cleaned.sql
-    │   │   ├── int_amazon__product_ratings.sql
-    │   │   └── int_amazon__sale_volume_cleaned.sql
-    │   └── 📂 marts/
-    │       └── mart_amazon__product_analysis.sql
-    └── 📄 _amazon__sources.yml
-```
+└── dbt_project/
+│   ├── models/
+│   │   ├── staging/
+│   │   │   └── stg_amazon__product_details.sql
+│   │   ├── intermediate/
+│   │   │   ├── int_amazon__products_cleaned.sql
+│   │   │   ├── int_amazon__product_ratings.sql
+│   │   │   └── int_amazon__sale_volume_cleaned.sql
+│   │   └── marts/
+│   │       └── mart_amazon__product_analysis.sql
+│   └── _amazon__sources.yml
+│
+├── dashboard/
+│   └── product_recommendation
+</pre>
 
+</details>
 ---
 
-## ⚙️ Prerequisites
+##  Prerequisites
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| 🐍 Python | 3.x | ETL scripting |
-| ❄️ Snowflake | Account | Data warehouse |
-| 🔧 dbt Core | Latest | Data transformation |
-| 📊 Power BI | Desktop | Visualization |
-| 🔑 RapidAPI | Account | Amazon product data |
+|  Python | 3.x | ETL scripting |
+|  Snowflake | Account | Data warehouse |
+|  dbt Core | Latest | Data transformation |
+|  Power BI | Desktop | Visualization |
+|  RapidAPI | Account | Amazon product data |
 
 ---
 
-## 🚀 Setup Instructions
+##  Setup Instructions
 
 ### Step 1️⃣: Configure API Credentials
 
 Create `scripts/config.py`:
 
 ```python
-# 🔑 RapidAPI credentials
+#  RapidAPI credentials
 RAPIDAPI_KEY = "your_api_key_here"
 RAPIDAPI_HOST = "real-time-amazon-data.p.rapidapi.com"
 
-# ❄️ Snowflake configuration
+#  Snowflake configuration
 snowflake_config = {
     'user': 'your_username',
     'password': 'your_password',
@@ -160,18 +149,18 @@ Update `profiles.yml` with your Snowflake credentials and set target schemas for
 
 ---
 
-## 🎬 Running the Pipeline
+##  Running the Pipeline
 
-### 📍 Step 1: Search and Extract ASINs
+###  Step 1: Search and Extract ASINs
 
 ```bash
 python scripts/search_product.py
 ```
 
 **What it does:**
-- 🔍 Searches Amazon for "dog food" products
-- 📝 Extracts first 10 product ASINs
-- 💾 Saves to `data/asins_to_fetch.json`
+-  Searches Amazon for queried products
+-  Extracts product ASINs
+-  Saves to `data/asins_to_fetch.json`
 
 **Output:**
 ```json
@@ -185,17 +174,17 @@ python scripts/search_product.py
 
 ---
 
-### 📍 Step 2: Fetch Product Details
+###  Step 2: Fetch Product Details
 
 ```bash
 python scripts/get_details.py
 ```
 
 **What it does:**
-- 📖 Reads ASINs from JSON file
-- 🌐 Fetches detailed product data for each ASIN
-- 💾 Saves individual files + combined file
-- ✅ Error handling for failed requests
+-  Reads ASINs from JSON file
+-  Fetches detailed product data for each ASIN
+-  Saves individual files + combined file
+-  Error handling for failed requests
 
 **Console output:**
 ```
@@ -208,17 +197,17 @@ Starting to fetch 10 products...
 
 ---
 
-### 📍 Step 3: Load to Snowflake
+###  Step 3: Load to Snowflake
 
 ```bash
 python scripts/load_to_snowflake.py
 ```
 
 **What it does:**
-- 🔍 Checks for existing ASINs in Snowflake
-- 🆕 Identifies new products to load
-- 🚀 Bulk loads via Snowflake COPY command
-- 🧹 Cleans up temporary files
+-  Checks for existing ASINs in Snowflake
+-  Identifies new products to load
+-  Bulk loads via Snowflake COPY command
+-  Cleans up temporary files
 
 **Load process:**
 ```
