@@ -530,12 +530,12 @@ dbt Project Structure:
 
 ## 📧 Contact & Links
 
-🔗 **GitHub:** [github.com/mrluke269]  
-📧 **Email:** [luke.trmai@gmail.com]
+**GitHub:** [github.com/mrluke269]  
+**Email:** [luke.trmai@gmail.com]
 
 ---
 
-## ⭐ Project Status
+## Project Status
 
 Status: ✅ COMPLETED    
 
