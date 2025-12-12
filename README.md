@@ -8,6 +8,9 @@
 [![Power BI](https://img.shields.io/badge/Power%20BI-Visualization-F2C811.svg)](https://powerbi.microsoft.com/)
 
 ---
+## [<img src="https://img.icons8.com/?size=512&id=19318&format=png" width="15">] Full Pipeline Walkthrough
+
+[<img src="https://img.icons8.com/?size=512&id=19318&format=png" width="120">](https://youtu.be/1dQGbyfgDQI)
 
 ##  Project Overview
 
